@@ -36,6 +36,36 @@ async function run() {
             }
         });
 
+
+
+        app.get('/search', async (req, res) => {
+            try {
+                const searchTerm = req.query.q;
+                const regex = new RegExp(searchTerm, 'i');
+
+                const categories = await categoriesCollection
+                    .find({
+                        $or: [
+                            { 'subCategories.title': regex },
+                            { 'subCategories.instructor': regex },
+                        ],
+                    })
+                    .toArray();
+
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error searching for courses', error: error.message });
+            }
+        });
+
+
+
+
+
+
+
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } catch (error) {
