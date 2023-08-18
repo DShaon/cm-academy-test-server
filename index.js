@@ -25,6 +25,7 @@ async function run() {
         await client.connect();
 
         const categoriesCollection = client.db('CM').collection('Categories');
+        const usersCollection = client.db('CM').collection('users');
 
         app.get('/categories', async (req, res) => {
             try {
@@ -35,6 +36,34 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
+
+        app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
+            try {
+                const categoryId = req.params.categoryId;
+                const subCategoryId = req.params.subCategoryId;
+
+                const category = await categoriesCollection.findOne({
+                    _id: categoryId
+                });
+
+                if (!category) {
+                    return res.status(404).json({ message: 'Category not found' });
+                }
+
+                const subCategory = category.subCategories.find(subCat => subCat._id === subCategoryId);
+
+                if (!subCategory) {
+                    return res.status(404).json({ message: 'SubCategory not found' });
+                }
+
+                res.json(subCategory);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching subCategory', error: error.message });
+            }
+        });
+
+
 
 
 
@@ -61,6 +90,33 @@ async function run() {
 
 
 
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+
+            const query = { email: user.email };
+            const existingUser = await usersCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'user already exists' });
+            }
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
+
+
+        // check Instructor 
+        app.get('/users/instructor/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email)
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const result = { instructor: user?.role === 'instructor' };
+            res.json(result);
+        });
 
 
 
@@ -82,3 +138,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`CM Academy is on port ${port}`);
 });
+
+
+
+
