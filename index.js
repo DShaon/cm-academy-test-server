@@ -27,6 +27,31 @@ async function run() {
         const categoriesCollection = client.db('CM').collection('Categories');
         const usersCollection = client.db('CM').collection('users');
 
+
+
+
+
+        // Route to handle form data insertion
+        app.post('/addCourse', async (req, res) => {
+            try {
+                const formData = req.body; // Form data sent from the client
+
+                // Insert the form data into the MongoDB collection 'Categories'
+                const categoriesCollection = client.db('CM').collection('Categories');
+                await categoriesCollection.insertOne(formData);
+
+                res.status(201).json({ message: 'Form data inserted successfully' });
+            } catch (error) {
+                console.error('Error inserting form data:', error);
+                res.status(500).json({ message: 'An error occurred', error: error.message });
+            }
+        });
+
+
+
+
+
+
         app.get('/categories', async (req, res) => {
             try {
                 const categories = await categoriesCollection.find().toArray();
@@ -64,7 +89,7 @@ async function run() {
         });
 
 
-
+        console.log(process.env.DB_USER)
 
 
         app.get('/search', async (req, res) => {
@@ -102,6 +127,18 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/users/:role', async (req, res) => {
+            const role = req.params.role;
+            try {
+                const users = await usersCollection.find({ role }).toArray();
+                res.json(users);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching users', error: error.message });
+            }
+        });
+
+
 
         // check Instructor 
         app.get('/users/instructor/:email', async (req, res) => {
@@ -125,7 +162,7 @@ async function run() {
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } catch (error) {
-        console.error(error);
+        console.error(error, process.env.DB_USER);
     }
 }
 
