@@ -113,7 +113,28 @@ async function run() {
             }
         });
 
-        
+
+        app.get('/categories/:categoryId', async (req, res) => {
+            try {
+                const categoryId = req.params.categoryId;
+
+                const category = await categoriesCollection.findOne({
+                    _id: new ObjectId(categoryId)
+                });
+
+                if (!category) {
+                    return res.status(404).json({ message: 'Category not found' });
+                }
+
+                res.json(category);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching category', error: error.message });
+            }
+        });
+
+
+
         // Update the approval status of a course
         app.put('/categories/:courseId/approval', async (req, res) => {
             try {
