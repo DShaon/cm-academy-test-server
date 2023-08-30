@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const { ObjectId } = require('mongodb'); // Import ObjectId
+const SSLCommerzPayment = require('sslcommerz-lts')
+
+
 
 require('dotenv').config();
 
@@ -14,8 +17,10 @@ app.use(express.json());
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lnbzdtk.mongodb.net/?retryWrites=true&w=majority`;
 
+
 async function run() {
     try {
+
         const client = new MongoClient(uri, {
             serverApi: {
                 version: ServerApiVersion.v1,
@@ -24,11 +29,19 @@ async function run() {
             },
         });
 
+        const store_id = process.env.StoreID
+        const store_passwd = process.env.StorePassword
+        const is_live = false //true for live, false for sandbox
+
         await client.connect();
 
         const categoriesCollection = client.db('CM').collection('Categories');
+
         const usersCollection = client.db('CM').collection('users');
+
         const blogCollection = client.db('CM').collection('Blog');
+
+        const ordersCollection = client.db('CM').collection('Orders');
 
 
 
@@ -51,6 +64,8 @@ async function run() {
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
         });
+
+        console.log(process.env.StoreID)
 
         // Route to handle form data insertion
         app.post('/addCourse', async (req, res) => {
@@ -114,6 +129,8 @@ async function run() {
         });
 
 
+
+        // getting single course by id
         app.get('/categories/:categoryId', async (req, res) => {
             try {
                 const categoryId = req.params.categoryId;
@@ -142,8 +159,8 @@ async function run() {
                 const { ApprovedStatus } = req.body; // Use ApprovedStatus field
 
                 const result = await categoriesCollection.updateOne(
-                    { _id: new ObjectId(courseId) }, // Use new ObjectId() here
-                    { $set: { ApprovedStatus } } // Update the ApprovedStatus field
+                    { _id: new ObjectId(courseId) }, // Use new ObjectId() heree
+                    { $set: { ApprovedStatus } } // Update the AprvStatus field
                 );
 
                 if (result.matchedCount === 0) {
@@ -160,31 +177,31 @@ async function run() {
 
 
 
-        app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
-            try {
-                const categoryId = req.params.categoryId;
-                const subCategoryId = req.params.subCategoryId;
+        // app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
+        //     try {
+        //         const categoryId = req.params.categoryId;
+        //         const subCategoryId = req.params.subCategoryId;
 
-                const category = await categoriesCollection.findOne({
-                    _id: categoryId
-                });
+        //         const category = await categoriesCollection.findOne({
+        //             _id: categoryId
+        //         });
 
-                if (!category) {
-                    return res.status(404).json({ message: 'Category not found' });
-                }
+        //         if (!category) {
+        //             return res.status(404).json({ message: 'Category not found' });
+        //         }
 
-                const subCategory = category.subCategories.find(subCat => subCat._id === subCategoryId);
+        //         const subCategory = category.subCategories.find(subCat => subCat._id === subCategoryId);
 
-                if (!subCategory) {
-                    return res.status(404).json({ message: 'SubCategory not found' });
-                }
+        //         if (!subCategory) {
+        //             return res.status(404).json({ message: 'SubCategory not found' });
+        //         }
 
-                res.json(subCategory);
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({ message: 'Error fetching subCategory', error: error.message });
-            }
-        });
+        //         res.json(subCategory);
+        //     } catch (error) {
+        //         console.error(error);
+        //         res.status(500).json({ message: 'Error fetching subCategory', error: error.message });
+        //     }
+        // });
 
 
 
@@ -209,6 +226,8 @@ async function run() {
                 res.status(500).json({ message: 'Error searching for courses', error: error.message });
             }
         });
+
+
 
 
         // Add all user into db
@@ -239,7 +258,8 @@ async function run() {
 
 
 
-        // check Instructor 
+        // check Instructor ////////////////////
+        ///////////////////////////////////
         app.get('/users/instructor/:email', async (req, res) => {
             const email = req.params.email;
             console.log(email)
@@ -253,6 +273,110 @@ async function run() {
             const result = { instructor: user?.role === 'instructor' };
             res.json(result);
         });
+
+
+        //    Route to handle Payment/order insertion//////////////
+        // /////////////////////////////////////////////////
+        app.post('/order', async (req, res) => {
+
+            const course = await categoriesCollection.findOne({ _id: new ObjectId(req.body.courseId) });
+            const order = req.body;
+
+            console.log(order)
+
+            const tran_id = new ObjectId().toString();
+
+            const data = {
+                total_amount: course?.coursePrice || "0",
+                currency: 'BDT',
+                tran_id: tran_id, // use unique tran_id for each api call
+                success_url: `https://cm-academy-test-server-production.up.railway.app/payment/success/${tran_id}`,
+                fail_url: `https://cm-academy-test-server-production.up.railway.app/fail/${tran_id}`,
+                cancel_url: 'http://localhost:3030/cancel',
+                ipn_url: 'http://localhost:3030/ipn',
+                shipping_method: 'Courier',
+                product_name: course?.title,
+                product_category: 'Electronic',
+                product_profile: 'general',
+                cus_name: 'Customer Name',
+                cus_email: course?.instructorEmail,
+                cus_add1: 'Dhaka',
+                cus_add2: 'Dhaka',
+                cus_city: 'Dhaka',
+                cus_state: 'Dhaka',
+                cus_postcode: '1000',
+                cus_country: 'Bangladesh',
+                cus_phone: order?.mobile,
+                cus_fax: '01711111111',
+                ship_name: 'Customer Name',
+                ship_add1: 'Dhaka',
+                ship_add2: 'Dhaka',
+                ship_city: 'Dhaka',
+                ship_state: 'Dhaka',
+                ship_postcode: 1000,
+                ship_country: 'Bangladesh',
+                instructor: course?.instructor,
+                student_email: order?.studentEmail,
+                student_name: order?.studentName,
+            };
+
+
+            // console.log(data);
+
+
+            const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+            sslcz.init(data).then(apiResponse => {
+                // Redirect the user to payment gateway
+                let GatewayPageURL = apiResponse.GatewayPageURL
+                res.send({ url: GatewayPageURL })
+
+                const finalOrder = {
+                    course,
+                    paidStatus: false,
+                    order,
+                    transactionId: tran_id
+                };
+                const result = ordersCollection.insertOne(finalOrder)
+
+                console.log('Redirecting to: ', GatewayPageURL)
+            });
+
+
+
+            app.post('/payment/success/:tranId', async (req, res) => {
+
+                const result = await ordersCollection.updateOne({ transactionId: req.params.tranId }, {
+                    $set: {
+                        paidStatus: true,
+                    },
+                });
+
+                if (result.modifiedCount > 0) {
+                    res.redirect(`https://cm-academy-test-server-production.up.railway.app/payment/success/${req.params.tranId}`)
+                }
+            });
+
+            app.post('/payment/fail/:tranId', async (req, res) => {
+                const result = await ordersCollection.deleteOne({ transactionId: req.params.tranId });
+
+                if (result.deletedCount) {
+                    res.redirect(`https://cm-academy-test-server-production.up.railway.app/payment/fail/${req.params.tranId}`)
+                };
+            })
+
+        })
+
+
+
+        // get order from db
+        app.get("/orders", async (req, res) => {
+            const result = await ordersCollection.find().toArray();
+            res.send(result);
+        });
+
+
+
+
 
 
 
