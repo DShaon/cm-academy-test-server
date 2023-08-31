@@ -309,7 +309,7 @@ async function run() {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const result = { instructor: user?.role === 'student' };
+            const result = { instructor: user?.role == 'student' };
             res.json(result);
         });
         // ///////////////check Admin ////////////////////
@@ -324,7 +324,7 @@ async function run() {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const result = { instructor: user?.role === 'admin' };
+            const result = { instructor: user?.role == 'admin' };
             res.json(result);
         });
         ///////////////////verify admin, instructor, student end point///////// End/////////////////
