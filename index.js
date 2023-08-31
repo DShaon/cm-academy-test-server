@@ -278,9 +278,9 @@ async function run() {
         });
 
 
+// ///////////////////verify admin, instructor, student end point////// start/////////////////
 
-
-        // check Instructor ////////////////////
+        // //////////////check Instructor ////////////////////
         ///////////////////////////////////
         app.get('/users/instructor/:email', async (req, res) => {
             const email = req.params.email;
@@ -295,6 +295,37 @@ async function run() {
             const result = { instructor: user?.role === 'instructor' };
             res.json(result);
         });
+        /////////////// check Student ////////////////////
+        ///////////////////////////////////
+        app.get('/users/student/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email)
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const result = { instructor: user?.role === 'student' };
+            res.json(result);
+        });
+        // ///////////////check Admin ////////////////////
+        ///////////////////////////////////
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email)
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const result = { instructor: user?.role === 'admin' };
+            res.json(result);
+        });
+// ///////////////////verify admin, instructor, student end point///////// End/////////////////
 
 
         //    Route to handle Payment/order insertion//////////////
