@@ -258,6 +258,28 @@ async function run() {
 
 
 
+        app.get('/users/:role/:id', async (req, res) => {
+            try {
+                const roleId = req.params.id;
+
+                const user = await usersCollection.findOne({
+                    _id: new ObjectId(roleId)
+                });
+
+                if (!user) {
+                    return res.status(404).json({ message: 'user not found' });
+                }
+
+                res.json(user);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching user', error: error.message });
+            }
+        });
+
+
+
+
         // check Instructor ////////////////////
         ///////////////////////////////////
         app.get('/users/instructor/:email', async (req, res) => {
