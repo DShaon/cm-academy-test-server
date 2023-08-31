@@ -283,18 +283,23 @@ async function run() {
         // //////////////check Instructor ////////////////////
         ///////////////////////////////////
         app.get('/users/instructor/:email', async (req, res) => {
-            const email = req.params.email;
-            console.log(email)
-            const query = { email: email };
-            const user = await usersCollection.findOne(query);
-
-            if (!user) {
+            try {
+              const email = req.params.email;
+              const query = { email: email };
+              const user = await usersCollection.findOne(query);
+          
+              if (!user) {
                 return res.status(404).json({ message: 'User not found' });
+              }
+          
+              const result = { instructor: user.role === 'instructor' };
+              res.json(result);
+            } catch (error) {
+              console.error(error);
+              res.status(500).json({ message: 'Error fetching instructor', error: error.message });
             }
-
-            const result = { instructor: user?.role === 'instructor' };
-            res.json(result);
-        });
+          });
+          
         /////////////// check Student ////////////////////
         ///////////////////////////////////
         app.get('/users/student/:email', async (req, res) => {
