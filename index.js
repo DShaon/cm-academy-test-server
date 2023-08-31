@@ -131,24 +131,24 @@ async function run() {
 
 
         // getting single course by id
-        app.get('/categories/:categoryId', async (req, res) => {
-            try {
-                const categoryId = req.params.categoryId;
+        // app.get('/categories/:categoryId', async (req, res) => {
+        //     try {
+        //         const categoryId = req.params.categoryId;
 
-                const category = await categoriesCollection.findOne({
-                    _id: new ObjectId(categoryId)
-                });
+        //         const category = await categoriesCollection.findOne({
+        //             _id: new ObjectId(categoryId)
+        //         });
 
-                if (!category) {
-                    return res.status(404).json({ message: 'Category not found' });
-                }
+        //         if (!category) {
+        //             return res.status(404).json({ message: 'Category not found' });
+        //         }
 
-                res.json(category);
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({ message: 'Error fetching category', error: error.message });
-            }
-        });
+        //         res.json(category);
+        //     } catch (error) {
+        //         console.error(error);
+        //         res.status(500).json({ message: 'Error fetching category', error: error.message });
+        //     }
+        // });
 
 
 
@@ -258,48 +258,43 @@ async function run() {
 
 
 
-        app.get('/users/:role/:id', async (req, res) => {
-            try {
-                const roleId = req.params.id;
+        // app.get('/users/:role/:id', async (req, res) => {
+        //     try {
+        //         const roleId = req.params.id;
 
-                const user = await usersCollection.findOne({
-                    _id: new ObjectId(roleId)
-                });
+        //         const user = await usersCollection.findOne({
+        //             _id: new ObjectId(roleId)
+        //         });
 
-                if (!user) {
-                    return res.status(404).json({ message: 'user not found' });
-                }
+        //         if (!user) {
+        //             return res.status(404).json({ message: 'user not found' });
+        //         }
 
-                res.json(user);
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({ message: 'Error fetching user', error: error.message });
-            }
-        });
+        //         res.json(user);
+        //     } catch (error) {
+        //         console.error(error);
+        //         res.status(500).json({ message: 'Error fetching user', error: error.message });
+        //     }
+        // });
 
 
-// ///////////////////verify admin, instructor, student end point////// start/////////////////
+        // ///////////////////verify admin, instructor, student end point////// start/////////////////
 
         // //////////////check Instructor ////////////////////
         ///////////////////////////////////
         app.get('/users/instructor/:email', async (req, res) => {
-            try {
-              const email = req.params.email;
-              const query = { email: email };
-              const user = await usersCollection.findOne(query);
-          
-              if (!user) {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (!user) {
                 return res.status(404).json({ message: 'User not found' });
-              }
-          
-              const result = { instructor: user.role === 'instructor' };
-              res.json(result);
-            } catch (error) {
-              console.error(error);
-              res.status(500).json({ message: 'Error fetching instructor', error: error.message });
             }
-          });
-          
+
+            const result = { instructor: user?.role == 'instructor' };
+            res.json(result);
+        });
         /////////////// check Student ////////////////////
         ///////////////////////////////////
         app.get('/users/student/:email', async (req, res) => {
@@ -330,7 +325,27 @@ async function run() {
             const result = { instructor: user?.role === 'admin' };
             res.json(result);
         });
-// ///////////////////verify admin, instructor, student end point///////// End/////////////////
+        ///////////////////verify admin, instructor, student end point///////// End/////////////////
+
+
+        app.get('/users/:role/:id', async (req, res) => {
+            try {
+                const roleId = req.params.id;
+
+                const user = await usersCollection.findOne({
+                    _id: new ObjectId(roleId)
+                });
+
+                if (!user) {
+                    return res.status(404).json({ message: 'user not found' });
+                }
+
+                res.json(user);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching user', error: error.message });
+            }
+        });
 
 
         //    Route to handle Payment/order insertion//////////////
