@@ -255,24 +255,24 @@ async function run() {
 
 
         // getting single course by id
-        // app.get('/categories/:categoryId', async (req, res) => {
-        //     try {
-        //         const categoryId = req.params.categoryId;
+        app.get('/categories/:categoryId', async (req, res) => {
+            try {
+                const categoryId = req.params.categoryId;
 
-        //         const category = await categoriesCollection.findOne({
-        //             _id: new ObjectId(categoryId)
-        //         });
+                const category = await categoriesCollection.findOne({
+                    _id: new ObjectId(categoryId)
+                });
 
-        //         if (!category) {
-        //             return res.status(404).json({ message: 'Category not found' });
-        //         }
+                if (!category) {
+                    return res.status(404).json({ message: 'Category not found' });
+                }
 
-        //         res.json(category);
-        //     } catch (error) {
-        //         console.error(error);
-        //         res.status(500).json({ message: 'Error fetching category', error: error.message });
-        //     }
-        // });
+                res.json(category);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching category', error: error.message });
+            }
+        });
 
 
 
@@ -553,7 +553,7 @@ async function run() {
                 });
 
                 if (result.modifiedCount > 0) {
-                    res.redirect(`https://cm-academy.netlify.app/payment/success/${req.params.tranId}`)
+                    res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
                 }
             });
 
@@ -565,7 +565,7 @@ async function run() {
                 const result = await ordersCollection.deleteOne({ transactionId: req.params.tranId });
 
                 if (result.deletedCount) {
-                    res.redirect(`https://cm-academy.netlify.app/payment/fail/${req.params.tranId}`)
+                    res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
                 };
                 // if (result.deletedCount) {
                 //     res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
