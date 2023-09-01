@@ -259,31 +259,9 @@ async function run() {
         });
 
 
-
-        // app.get('/users/:role/:id', async (req, res) => {
-        //     try {
-        //         const roleId = req.params.id;
-
-        //         const user = await usersCollection.findOne({
-        //             _id: new ObjectId(roleId)
-        //         });
-
-        //         if (!user) {
-        //             return res.status(404).json({ message: 'user not found' });
-        //         }
-
-        //         res.json(user);
-        //     } catch (error) {
-        //         console.error(error);
-        //         res.status(500).json({ message: 'Error fetching user', error: error.message });
-        //     }
-        // });
-
-
         // ///////////////////verify admin, instructor, student end point////// start/////////////////
 
-        // //////////////check Instructor ////////////////////
-        ///////////////////////////////////
+        // Check if a user is a Instructor based on email
         app.get('/users/instructor/:email', async (req, res) => {
             const email = req.params.email;
             console.log(email);
@@ -294,14 +272,15 @@ async function run() {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const result = { instructor: user?.role == 'instructor' };
+            const result = { instructor: user?.role === 'instructor' };
             res.json(result);
         });
-        /////////////// check Student ////////////////////
-        ///////////////////////////////////
+
+
+        // Check if a user is a student based on email
         app.get('/users/student/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email)
+
             const query = { email: email };
             const user = await usersCollection.findOne(query);
 
@@ -309,14 +288,15 @@ async function run() {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const result = { instructor: user?.role == 'student' };
+            const result = { student: user?.role === 'student' };
             res.json(result);
         });
-        // ///////////////check Admin ////////////////////
-        ///////////////////////////////////
+
+
+        // Check if a user is an admin based on email
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email)
+
             const query = { email: email };
             const user = await usersCollection.findOne(query);
 
@@ -324,9 +304,11 @@ async function run() {
                 return res.status(404).json({ message: 'User not found' });
             }
 
-            const result = { instructor: user?.role == 'admin' };
+            const result = { admin: user?.role === 'admin' };
             res.json(result);
         });
+
+
         ///////////////////verify admin, instructor, student end point///////// End/////////////////
 
 
