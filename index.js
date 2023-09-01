@@ -4,7 +4,9 @@ const cors = require('cors');
 const { ObjectId } = require('mongodb'); // Import ObjectId
 const SSLCommerzPayment = require('sslcommerz-lts')
 
-
+const nodemailer = require("nodemailer");
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
 
 require('dotenv').config();
 
@@ -13,6 +15,128 @@ const port = process.env.PORT || 5000;
 // middleware
 app.use(cors());
 app.use(express.json());
+
+// //////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
+// / send grid emails 
+
+
+const paymentConfirmEmail = (order) => {
+    const studentEmail = order.order.studentEmail;
+    const date = order.order.date;
+    const orderId = order.transactionId;
+    const studentName = order.order.studentName;
+
+    const instructorName = order.course.instructor;
+    const instructorEmail = order.course.instructorEmail;
+    const courseTitle = order.course.title;
+    const totalPrice = order.course.coursePrice;
+
+
+    const pdfDoc = new PDFDocument();
+
+    // Pipe the PDF content to a writable stream
+    const pdfStream = fs.createWriteStream('invoice.pdf');
+    pdfDoc.pipe(pdfStream);
+
+    // Function to add a heading with styles
+    function addHeading(text, fontSize, color, align, margin) {
+        pdfDoc.font('Helvetica-Bold')
+            .fontSize(fontSize)
+            .fillColor(color)
+            .text(text, { align: align, continued: false })
+            .moveDown(margin);
+    }
+
+    // Function to add a paragraph with styles
+    function addParagraph(text, fontSize, color, align, margin) {
+        pdfDoc.font('Helvetica')
+            .fontSize(fontSize)
+            .fillColor(color)
+            .text(text, { align: align, continued: false })
+            .moveDown(margin);
+    }
+
+    // Header
+    pdfDoc.rect(0, 0, 610, 130)
+        .fill('#e1e1e1');
+
+    pdfDoc.image('./logo.png', 60, 30, { width: 80, height: 80 });
+    addHeading('Invoice from CM Academy', 24, '#0EADF0', 'center', 2);
+
+
+
+    // Order Details
+    pdfDoc.rect(20, 130, 560, 300)
+        .fill('#ffffff');
+
+    addHeading(`Course: ${courseTitle}`, 18, '#5b5b5b', 'left', 1);
+
+    addParagraph(`Order ID: ${orderId}`, 14, '#5b5b5b', 'left', 0.5);
+    addParagraph(`Student Name: ${studentName}`, 14, '#5b5b5b', 'left', 0.5);
+    addParagraph(`Student Email: ${studentEmail}`, 14, '#5b5b5b', 'left', 0.5);
+    addParagraph(`Date: ${date}`, 14, '#5b5b5b', 'left', 0.5);
+    addParagraph(`Total Price: ${totalPrice} BDT`, 14, '#5b5b5b', 'left', 0.5);
+
+
+    pdfDoc.rect(20, 320, 560, 100)
+        .fill('#f7f7f7');
+
+    addHeading('Instructor Details', 16, '#5b5b5b', 'left', 0.5);
+
+    addParagraph(`Instructor Email: ${instructorEmail}`, 14, '#5b5b5b', 'left', 0.5);
+    addParagraph(`Instructor Name: ${instructorName}`, 14, '#5b5b5b', 'left', 0.5);
+
+    // End the PDF document
+    pdfDoc.end();
+
+    // Send email with PDF attachment
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        auth: {
+            user: 'apikey',
+            pass: process.env.SENDGRID_API_KEY
+        }
+    });
+
+    const adminEmail = "code.mates.team@gmail.com";
+    const recipients = [instructorEmail, studentEmail, adminEmail];
+
+    transporter.sendMail({
+        from: 'tayebhossain018@gmail.com',
+        to: recipients.join(', '),
+        subject: 'Your Invoice from CM Academy',
+        text: 'Thank you for enrolling in the course.',
+        attachments: [
+            {
+                filename: 'invoice.pdf',
+                content: fs.createReadStream('invoice.pdf')
+            }
+        ]
+    }, function (error, info) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
+
+    // Remove the temporary PDF file
+    pdfStream.on('finish', () => {
+        fs.unlink('invoice.pdf', (err) => {
+            if (err) {
+                console.error('Error deleting temporary PDF file:', err);
+            }
+        });
+    });
+};
+
+
+///////////////////////////////////////////////
+/////////////////////////////////////
+
+
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lnbzdtk.mongodb.net/?retryWrites=true&w=majority`;
@@ -400,7 +524,27 @@ async function run() {
 
 
 
+            // app.post('/payment/success/:tranId', async (req, res) => {
+
+            //     const result = await ordersCollection.updateOne({ transactionId: req.params.tranId }, {
+            //         $set: {
+            //             paidStatus: true,
+            //         },
+            //     });
+
+            //     if (result.modifiedCount > 0) {
+            //         res.redirect(`https://cm-academy.netlify.app/payment/success/${req.params.tranId}`)
+            //     }
+            // });
+
+
             app.post('/payment/success/:tranId', async (req, res) => {
+
+                const { tranId } = req.params;
+
+                const order = await ordersCollection.findOne({ transactionId: tranId });
+
+                paymentConfirmEmail(order);
 
                 const result = await ordersCollection.updateOne({ transactionId: req.params.tranId }, {
                     $set: {
@@ -412,6 +556,10 @@ async function run() {
                     res.redirect(`https://cm-academy.netlify.app/payment/success/${req.params.tranId}`)
                 }
             });
+
+
+
+
 
             app.post('/payment/fail/:tranId', async (req, res) => {
                 const result = await ordersCollection.deleteOne({ transactionId: req.params.tranId });
