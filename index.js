@@ -553,7 +553,7 @@ async function run() {
                 });
 
                 if (result.modifiedCount > 0) {
-                    res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+                    res.redirect(`http://cm-academy.netlify.app/payment/success/${req.params.tranId}`)
                 }
             });
 
@@ -565,7 +565,7 @@ async function run() {
                 const result = await ordersCollection.deleteOne({ transactionId: req.params.tranId });
 
                 if (result.deletedCount) {
-                    res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
+                    res.redirect(`http://cm-academy.netlify.app/fail/${req.params.tranId}`)
                 };
                 // if (result.deletedCount) {
                 //     res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
