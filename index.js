@@ -167,7 +167,7 @@ async function run() {
 
         const ordersCollection = client.db('CM').collection('Orders');
         const bankAccountsCollection = client.db('CM').collection('bankAccounts');
-
+        const withdrawRequestsCollection = client.db('CM').collection('withdrawRequests');
 
 
 
@@ -649,6 +649,47 @@ async function run() {
         });
 
 
+        // store withdraw re to db
+        app.post('/storeWData', async (req, res) => {
+            try {
+                const { totalAmount, email, withdrawStatus } = req.body;
+
+                await withdrawRequestsCollection.insertOne({
+                    totalAmount,
+                    email,
+                    withdrawStatus,
+                });
+
+                res.status(200).json({ message: 'Withdrawal request saved successfully' });
+            } catch (error) {
+                console.error('Error saving withdrawal request:', error);
+                res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+
+
+        // get withdraw request data from db by email
+        app.get('/getWithdrawRequests/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await withdrawRequestsCollection.find({ email }).toArray();
+            res.send(result);
+        }); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -656,6 +697,9 @@ async function run() {
         console.error(error, process.env.DB_USER);
     }
 }
+
+
+
 
 run().catch(console.dir);
 
