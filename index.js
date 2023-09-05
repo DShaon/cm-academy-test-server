@@ -582,20 +582,26 @@ async function run() {
             res.send(result);
         });
 
-        
-                // get order from db with student email then course id
-                app.get("/orders/:email/:courseId", async (req, res) => {
-                    const email = req.params.email;
-                    const courseId = req.params.courseId;
-                    const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
-                    res.send(result);
-                });
+
 
         // get order from db with student email
         app.get("/orders/:email", async (req, res) => {
             const email = req.params.email;
             const result = await ordersCollection.find({ "order.studentEmail": email }).toArray();
             res.send(result);
+        });
+
+        // get order from db with student email then course id
+        app.get("/orders/:email/:courseId", async (req, res) => {
+            try {
+                const email = req.params.email;
+                const courseId = ObjectId(req.params.courseId);
+                const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                res.status(500).send("Internal Server Error");
+            }
         });
 
 
