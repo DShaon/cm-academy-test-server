@@ -605,10 +605,7 @@ async function run() {
             }
         });
 
-
-
         // Create a route for storing bank account setup information
-
         app.post('/bank-account-setup', async (req, res) => {
             try {
                 const {
@@ -642,6 +639,13 @@ async function run() {
                 console.error('Error adding bank account setup data:', error);
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
+        });
+
+        // get bank account setup information from db
+        app.get('/bank-account-setup/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await bankAccountsCollection.find({ email }).toArray();
+            res.send(result);
         });
 
 
