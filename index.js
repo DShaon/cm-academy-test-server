@@ -166,6 +166,7 @@ async function run() {
         const blogCollection = client.db('CM').collection('Blog');
 
         const ordersCollection = client.db('CM').collection('Orders');
+        const bankAccountsCollection = client.db('CM').collection('bankAccounts');
 
 
 
@@ -604,6 +605,44 @@ async function run() {
             }
         });
 
+
+
+        // Create a route for storing bank account setup information
+
+        app.post('/bank-account-setup', async (req, res) => {
+            try {
+                const {
+                    InstructorEmail,
+                    email,
+                    accountHolderName,
+                    accountNo,
+                    routingNumber,
+                    bankName,
+                    bankBranchName,
+                    phoneNumber,
+                } = req.body;
+
+                // Assuming you have a "bankAccounts" collection in MongoDB
+                const bankAccount = {
+                    InstructorEmail,
+                    email,
+                    accountHolderName,
+                    accountNo,
+                    routingNumber,
+                    bankName,
+                    bankBranchName,
+                    phoneNumber,
+                };
+
+                // Insert the bank account data into the MongoDB collection
+                const result = await bankAccountsCollection.insertOne(bankAccount);
+
+                res.status(201).json({ message: 'Bank account setup data added successfully' });
+            } catch (error) {
+                console.error('Error adding bank account setup data:', error);
+                res.status(500).json({ message: 'An error occurred', error: error.message });
+            }
+        });
 
 
 
