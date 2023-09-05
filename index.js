@@ -668,12 +668,12 @@ async function run() {
         });
 
 
-        // get withdraw request data from db by email
-        app.get('/getWithdrawRequests/:email', async (req, res) => {
-            const email = req.params.email;
-            const result = await withdrawRequestsCollection.find({ email }).toArray();
-            res.send(result);
-        }); 
+        // // get withdraw request data from db by email
+        // app.get('/getWithdrawRequests/:email', async (req, res) => {
+        //     const email = req.params.email;
+        //     const result = await withdrawRequestsCollection.find({ email }).toArray();
+        //     res.send(result);
+        // }); 
 
 
 
