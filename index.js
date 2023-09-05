@@ -595,7 +595,7 @@ async function run() {
         app.get("/orders/:email/:courseId", async (req, res) => {
             const email = req.params.email;
             const courseId = req.params.courseId;
-            const result = await ordersCollection.find({ "order.studentEmail": email, "course._id": courseId }).toArray();
+            const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
             res.send(result);
         });
 
