@@ -582,6 +582,14 @@ async function run() {
             res.send(result);
         });
 
+        
+                // get order from db with student email then course id
+                app.get("/orders/:email/:courseId", async (req, res) => {
+                    const email = req.params.email;
+                    const courseId = req.params.courseId;
+                    const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
+                    res.send(result);
+                });
 
         // get order from db with student email
         app.get("/orders/:email", async (req, res) => {
@@ -590,14 +598,6 @@ async function run() {
             res.send(result);
         });
 
-
-        // get order from db with student email then course id
-        app.get("/orders/:email/:courseId", async (req, res) => {
-            const email = req.params.email;
-            const courseId = req.params.courseId;
-            const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
-            res.send(result);
-        });
 
 
 
