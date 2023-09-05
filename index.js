@@ -596,7 +596,7 @@ async function run() {
             try {
                 const email = req.params.email;
                 const courseId = ObjectId(req.params.courseId);
-                const result = await ordersCollection.find({ "order.studentEmail": email, "order.course._id": courseId }).toArray();
+                const result = await ordersCollection.find({ "order.studentEmail": email, "course._id": courseId }).toArray();
                 res.send(result);
             } catch (error) {
                 console.error("Error fetching orders:", error);
