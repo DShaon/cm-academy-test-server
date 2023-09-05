@@ -583,7 +583,12 @@ async function run() {
         });
 
 
-
+        // get order from db with student email
+        app.get("/orders/:email", async (req, res) => {
+            const email = req.params.email;
+            const result = await ordersCollection.find({ "order.studentEmail": email }).toArray();
+            res.send(result);
+        });
 
 
 
