@@ -265,7 +265,16 @@ async function run() {
             }
         });
 
-
+        // get all course which ApprovedStatus is "Approved" from db
+        app.get('/categories/approved', async (req, res) => {
+            try {
+                const categories = await categoriesCollection.find({ ApprovedStatus: "Approved" }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
 
         // getting single course by object id from db
         app.get('/categories/:courseId', async (req, res) => {
@@ -309,6 +318,8 @@ async function run() {
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
         });
+
+
 
         // Delete a course by id from db 
 
