@@ -253,6 +253,18 @@ async function run() {
             }
         });
 
+        // get all course by instructor email with error handling 
+        app.get('/categories/instructor/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const categories = await categoriesCollection.find({ instructorEmail: email }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
+
 
 
         // getting single course by id
@@ -588,18 +600,18 @@ async function run() {
         //////////////////////////////////////////////////  
         app.get('/orders/EnrolledEmail', async (req, res) => {
             try {
-              const result = await ordersCollection.find({ "paidStatus": true }).toArray();
-              console.log("Result:", result); // Log the result
-              const studentEmails = result.map(order => order.order.studentEmail);
-              console.log("Student Emails:", studentEmails); // Log the extracted student emails
-              res.send(studentEmails);
+                const result = await ordersCollection.find({ "paidStatus": true }).toArray();
+                console.log("Result:", result); // Log the result
+                const studentEmails = result.map(order => order.order.studentEmail);
+                console.log("Student Emails:", studentEmails); // Log the extracted student emails
+                res.send(studentEmails);
             } catch (error) {
-              console.error("Error fetching enrolled student emails:", error);
-              res.status(500).send("Internal Server Error");
+                console.error("Error fetching enrolled student emails:", error);
+                res.status(500).send("Internal Server Error");
             }
-          });
-          
-          
+        });
+
+
 
         // get order from db with student email
         app.get("/orders/:email", async (req, res) => {
