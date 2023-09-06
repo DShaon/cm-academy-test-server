@@ -267,26 +267,25 @@ async function run() {
 
 
 
-        // getting single course by id
-        app.get('/categories/:categoryId', async (req, res) => {
+        // getting single course by object id from db
+        app.get('/categories/:courseId', async (req, res) => {
             try {
-                const categoryId = req.params.categoryId;
-
-                const category = await categoriesCollection.findOne({
-                    _id: new ObjectId(categoryId)
+                const courseId = req.params.courseId;
+                const course = await categoriesCollection.findOne({
+                    _id: new ObjectId(courseId)
                 });
 
-                if (!category) {
-                    return res.status(404).json({ message: 'Category not found' });
+                if (!course) {
+                    return res.status(404).json({ message: 'Course not found' });
                 }
 
-                res.json(category);
+                res.json(course);
             } catch (error) {
                 console.error(error);
-                res.status(500).json({ message: 'Error fetching category', error: error.message });
+                res.status(500).json({ message: 'Error fetching course', error: error.message });
             }
         });
-
+     
 
 
         // Update the approval status of a course
@@ -310,6 +309,28 @@ async function run() {
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
         });
+
+        // Delete a course by id from db 
+
+        app.delete('/categories/:courseId', async (req, res) => {
+            try {
+                const courseId = req.params.courseId;
+
+                const result = await categoriesCollection.deleteOne({
+                    _id: new ObjectId(courseId)
+                });
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).json({ message: 'Course not found' });
+                }
+
+                res.json({ message: 'Course deleted successfully' });
+            } catch (error) {
+                console.error('Error deleting course:', error);
+                res.status(500).json({ message: 'An error occurred', error: error.message });
+            }
+        });
+
 
         // get all categories name from db
         app.get('/categoriesName', async (req, res) => {
