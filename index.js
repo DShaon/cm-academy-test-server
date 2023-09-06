@@ -285,7 +285,7 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching course', error: error.message });
             }
         });
-     
+
 
 
         // Update the approval status of a course
@@ -725,9 +725,10 @@ async function run() {
         // store withdraw re to db
         app.post('/storeWData', async (req, res) => {
             try {
-                const { totalAmount, email, withdrawStatus } = req.body;
+                const { totalAmount, email, withdrawStatus, name } = req.body;
 
                 await withdrawRequestsCollection.insertOne({
+                    name,
                     totalAmount,
                     email,
                     withdrawStatus,
