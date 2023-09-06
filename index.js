@@ -159,12 +159,12 @@ async function run() {
 
         await client.connect();
 
+        //////////////////////////////////////////////////////////
+        //////////////All Mongodb Collections start here//////////
+        /////////////////////////////////////////////////////////
         const categoriesCollection = client.db('CM').collection('Categories');
-
         const usersCollection = client.db('CM').collection('users');
-
         const blogCollection = client.db('CM').collection('Blog');
-
         const ordersCollection = client.db('CM').collection('Orders');
         const bankAccountsCollection = client.db('CM').collection('bankAccounts');
         const withdrawRequestsCollection = client.db('CM').collection('withdrawRequests');
@@ -174,7 +174,7 @@ async function run() {
 
 
 
-        // Route to blog insertion
+        ////////// Route to blog insertion
         app.post('/blog', async (req, res) => {
             try {
                 const blog = req.body; // Form data sent from the client
@@ -577,13 +577,29 @@ async function run() {
 
 
 
+
         // get order from db
         app.get("/orders", async (req, res) => {
             const result = await ordersCollection.find().toArray();
             res.send(result);
         });
 
-
+        // get all studentEmail from Orders collection whoes paidStatus is true and it will all enrolled student email//
+        //////////////////////////////////////////////////  
+        app.get('/orders/EnrolledEmail', async (req, res) => {
+            try {
+              const result = await ordersCollection.find({ "paidStatus": true }).toArray();
+              console.log("Result:", result); // Log the result
+              const studentEmails = result.map(order => order.order.studentEmail);
+              console.log("Student Emails:", studentEmails); // Log the extracted student emails
+              res.send(studentEmails);
+            } catch (error) {
+              console.error("Error fetching enrolled student emails:", error);
+              res.status(500).send("Internal Server Error");
+            }
+          });
+          
+          
 
         // get order from db with student email
         app.get("/orders/:email", async (req, res) => {
@@ -605,6 +621,10 @@ async function run() {
             }
         });
 
+
+
+
+
         // Create a route for storing bank account setup information
         app.post('/bank-account-setup', async (req, res) => {
             try {
@@ -619,7 +639,7 @@ async function run() {
                     phoneNumber,
                 } = req.body;
 
-                // Assuming you have a "bankAccounts" collection in MongoDB
+                // Assuming i have a "bankAccounts" collection in MongoDB
                 const bankAccount = {
                     InstructorEmail,
                     email,
@@ -674,6 +694,8 @@ async function run() {
             res.send(result);
         });
 
+
+
         // get withdraw request data from db by email
         app.get('/getWithdrawRequests/:email', async (req, res) => {
             const email = req.params.email;
@@ -695,8 +717,8 @@ async function run() {
 
 
 
-
-
+        ////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////////////////////////////////
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } catch (error) {
