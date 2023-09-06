@@ -168,7 +168,7 @@ async function run() {
         const ordersCollection = client.db('CM').collection('Orders');
         const bankAccountsCollection = client.db('CM').collection('bankAccounts');
         const withdrawRequestsCollection = client.db('CM').collection('withdrawRequests');
-
+        const CategoriesNameCollection = client.db('CM').collection('CategoriesName');
 
 
 
@@ -311,7 +311,16 @@ async function run() {
             }
         });
 
-
+        // get all categories name from db
+        app.get('/categoriesName', async (req, res) => {
+            try {
+                const categoriesName = await CategoriesNameCollection.find().toArray();
+                res.json(categoriesName);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
 
 
         // app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
