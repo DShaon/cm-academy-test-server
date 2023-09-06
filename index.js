@@ -641,10 +641,10 @@ async function run() {
             }
         });
 
-        // get bank account setup information from db
+        // get bank account setup information from db by instructor email
         app.get('/bank-account-setup/:email', async (req, res) => {
             const email = req.params.email;
-            const result = await bankAccountsCollection.find({ email }).toArray();
+            const result = await bankAccountsCollection.find({ "InstructorEmail": email }).toArray();
             res.send(result);
         });
 
@@ -679,7 +679,7 @@ async function run() {
             const email = req.params.email;
             const result = await withdrawRequestsCollection.find({ email }).toArray();
             res.send(result);
-        }); 
+        });
 
 
 
