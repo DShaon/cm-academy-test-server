@@ -321,6 +321,17 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
+        // add new categories
+        app.post('/categoriesName', async (req, res) => {
+            try {
+                const categoriesName = req.body;
+                const result = await CategoriesNameCollection.insertOne(categoriesName);
+                res.send(result);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
 
 
         // app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
