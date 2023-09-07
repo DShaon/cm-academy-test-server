@@ -278,6 +278,19 @@ async function run() {
             }
         });
 
+     // get all course by category name "courseCategory" with error handling
+     app.get('/categories/:courseCategory', async (req, res) => {
+        try {
+            const courseCategory = req.params.courseCategory;
+            const categories = await categoriesCollection.find({ courseCategory }).toArray();
+            res.json(categories);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Error fetching categories', error: error.message });
+        }
+    });
+
+
         // getting single course by object id from db
         app.get('/categories/:courseId', async (req, res) => {
             try {
@@ -296,8 +309,7 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching course', error: error.message });
             }
         });
-
-
+ 
 
         // Update the approval status of a course
         app.put('/categories/:courseId/approval', async (req, res) => {
@@ -343,17 +355,7 @@ async function run() {
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
         });
-        // get all course by category name "courseCategory" with error handling
-        app.get('/categories/:courseCategory', async (req, res) => {
-            try {
-                const courseCategory = req.params.courseCategory;
-                const categories = await categoriesCollection.find({ courseCategory }).toArray();
-                res.json(categories);
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({ message: 'Error fetching categories', error: error.message });
-            }
-        });
+  
 
 
         // get all categories name from db
