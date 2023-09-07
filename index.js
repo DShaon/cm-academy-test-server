@@ -278,17 +278,17 @@ async function run() {
             }
         });
 
-     // get all course by category name "courseCategory" with error handling
-     app.get('/categories/:courseCategory', async (req, res) => {
-        try {
-            const courseCategory = req.params.courseCategory;
-            const categories = await categoriesCollection.find({ courseCategory }).toArray();
-            res.json(categories);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Error fetching categories', error: error.message });
-        }
-    });
+        // get all course by category name "courseCategory" with error handling
+        app.get('/categories/:courseCategory', async (req, res) => {
+            try {
+                const courseCategory = req.params.courseCategory;
+                const categories = await categoriesCollection.find({ courseCategory }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
 
 
         // getting single course by object id from db
@@ -309,7 +309,7 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching course', error: error.message });
             }
         });
- 
+
 
         // Update the approval status of a course
         app.put('/categories/:courseId/approval', async (req, res) => {
@@ -355,7 +355,7 @@ async function run() {
                 res.status(500).json({ message: 'An error occurred', error: error.message });
             }
         });
-  
+
 
 
         // get all categories name from db
@@ -507,6 +507,73 @@ async function run() {
         });
 
 
+
+        // Update a student's information by email
+        app.put("/users/student/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const { fullName, phone, userImage } = req.body;
+
+            console.log(fullName, phone);
+
+            try {
+                // Find the student by email
+                const student = await usersCollection.findOne({ email });
+
+                if (!student) {
+                    return res.status(404).json({ message: "Student not found" });
+                }
+
+                // Update the student's information
+                await usersCollection.updateOne({ email }, { $set: { fullName, contactNumber: phone, userImage } });
+
+                // Fetch the updated student data
+                const updatedStudent = await usersCollection.findOne({ email });
+
+                res.status(200).json(updatedStudent);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: "Internal server error" });
+            }
+        });
+
+
+
+
+        // Update an instructor's information by email
+        app.put("/users/instructor/:email", async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const { fullName, contactNumber, userImage, aboutMe } = req.body;
+
+            console.log(fullName, contactNumber);
+
+            try {
+                // Find the instructor by email
+                const instructor = await usersCollection.findOne({ email });
+
+                if (!instructor) {
+                    return res.status(404).json({ message: "Instructor not found" });
+                }
+
+                // Update the instructor's information
+                await usersCollection.updateOne({ email }, { $set: { fullName, contactNumber, userImage, aboutMe } });
+
+                // Fetch the updated instructor data
+                const updatedInstructor = await usersCollection.findOne({ email });
+
+                res.status(200).json(updatedInstructor);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: "Internal server error" });
+            }
+        });
+
+
+
+
+
+
         //    Route to handle Payment/order insertion//////////////
         // /////////////////////////////////////////////////
         app.post('/order', async (req, res) => {
@@ -634,20 +701,32 @@ async function run() {
             res.send(result);
         });
 
-        // get all studentEmail from Orders collection whoes paidStatus is true and it will all enrolled student email//
-        //////////////////////////////////////////////////  
-        app.get('/orders/EnrolledEmail', async (req, res) => {
-            try {
-                const result = await ordersCollection.find({ "paidStatus": true }).toArray();
-                console.log("Result:", result); // Log the result
-                const studentEmails = result.map(order => order.order.studentEmail);
-                console.log("Student Emails:", studentEmails); // Log the extracted student emails
-                res.send(studentEmails);
-            } catch (error) {
-                console.error("Error fetching enrolled student emails:", error);
-                res.status(500).send("Internal Server Error");
-            }
+        // get all studentEmail with  studentName, date, courseId from Orders collection whose paidStatus is true and it will all enrolled student email and also insure that no duplicate email will be send to the client , also it will send how many course a student enrolled 
+
+
+        app.get("/orders/studentEmail", async (req, res) => {
+            const result = await ordersCollection.aggregate([
+                {
+                    $match: { "paidStatus": true }
+                },
+                {
+                    $group: {
+                        _id: "$order.courseId",
+                        totalEnrolledCourse: { $sum: 1 },
+                        studentName: { $first: "$order.studentName" },
+                        date: { $first: "$order.date" },
+                        mobile: { $first: "$order.mobile" },
+                        courseId: { $first: "$order.courseId" },
+                        email: { $first: "$order.studentEmail" }
+
+
+
+                    }
+                }
+            ]).toArray();
+            res.send(result);
         });
+
 
 
 
