@@ -253,6 +253,19 @@ async function run() {
             }
         });
 
+        // get all course by category name "courseCategory" with error handling
+        app.get('/categories/:courseCategory', async (req, res) => {
+            try {
+                const courseCategory = req.params.courseCategory;
+                const categories = await categoriesCollection.find({ courseCategory }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
+
+
         // get all course by instructor email with error handling 
         app.get('/categories/instructor/:email', async (req, res) => {
             try {
@@ -364,35 +377,6 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
-
-
-        // app.get('/categories/:categoryId/subCategories/:subCategoryId', async (req, res) => {
-        //     try {
-        //         const categoryId = req.params.categoryId;
-        //         const subCategoryId = req.params.subCategoryId;
-
-        //         const category = await categoriesCollection.findOne({
-        //             _id: categoryId
-        //         });
-
-        //         if (!category) {
-        //             return res.status(404).json({ message: 'Category not found' });
-        //         }
-
-        //         const subCategory = category.subCategories.find(subCat => subCat._id === subCategoryId);
-
-        //         if (!subCategory) {
-        //             return res.status(404).json({ message: 'SubCategory not found' });
-        //         }
-
-        //         res.json(subCategory);
-        //     } catch (error) {
-        //         console.error(error);
-        //         res.status(500).json({ message: 'Error fetching subCategory', error: error.message });
-        //     }
-        // });
-
-
 
 
         app.get('/search', async (req, res) => {
