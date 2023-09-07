@@ -253,17 +253,6 @@ async function run() {
             }
         });
 
-        // get all course by category name "courseCategory" with error handling
-        app.get('/categories/:courseCategory', async (req, res) => {
-            try {
-                const courseCategory = req.params.courseCategory;
-                const categories = await categoriesCollection.find({ courseCategory }).toArray();
-                res.json(categories);
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({ message: 'Error fetching categories', error: error.message });
-            }
-        });
 
 
         // get all course by instructor email with error handling 
@@ -352,6 +341,17 @@ async function run() {
             } catch (error) {
                 console.error('Error deleting course:', error);
                 res.status(500).json({ message: 'An error occurred', error: error.message });
+            }
+        });
+        // get all course by category name "courseCategory" with error handling
+        app.get('/categories/:courseCategory', async (req, res) => {
+            try {
+                const courseCategory = req.params.courseCategory;
+                const categories = await categoriesCollection.find({ courseCategory }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
 
