@@ -420,6 +420,12 @@ async function run() {
             res.send(result);
         });
 
+        // get all user from db
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
+
 
         // get user based user from db
         app.get('/users/:role', async (req, res) => {
@@ -714,9 +720,8 @@ async function run() {
                         _id: "$order.courseId",
                         totalEnrolledCourse: { $sum: 1 },
                         studentName: { $first: "$order.studentName" },
-                        date: { $first: "$order.date" },
+
                         mobile: { $first: "$order.mobile" },
-                        courseId: { $first: "$order.courseId" },
                         email: { $first: "$order.studentEmail" }
 
 
