@@ -427,6 +427,15 @@ async function run() {
         });
 
 
+        // get all user by email from db
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await usersCollection.findOne({ email });
+            res.send(result);
+        });
+
+
+
         // get user based user from db
         app.get('/users/:role', async (req, res) => {
             const role = req.params.role;
