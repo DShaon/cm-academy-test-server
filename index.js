@@ -427,12 +427,6 @@ async function run() {
         });
 
 
-        // get all user by email from db
-        app.get('/users/:email', async (req, res) => {
-            const email = req.params.email;
-            const result = await usersCollection.findOne({ email });
-            res.send(result);
-        });
 
 
 
@@ -448,6 +442,12 @@ async function run() {
             }
         });
 
+        // get all user by email from db
+        app.get('/users/check/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await usersCollection.findOne({ email });
+            res.send(result);
+        });
 
         // ///////////////////verify admin, instructor, student end point////// start/////////////////
 
