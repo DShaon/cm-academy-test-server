@@ -292,7 +292,7 @@ async function run() {
 
 
         // getting single course by object id from db
-        app.get('/categories/:courseId', async (req, res) => {
+        app.get('/categories/byId/:courseId', async (req, res) => {
             try {
                 const courseId = req.params.courseId;
                 const course = await categoriesCollection.findOne({
