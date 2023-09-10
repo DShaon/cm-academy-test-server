@@ -671,22 +671,64 @@ async function run() {
             // });
 
 
+            // Route to handle successful payment
             app.post('/payment/success/:tranId', async (req, res) => {
+                try {
+                    const { tranId } = req.params;
 
-                const { tranId } = req.params;
+                    // Fetch the order details
+                    const order = await ordersCollection.findOne({ transactionId: tranId });
 
-                const order = await ordersCollection.findOne({ transactionId: tranId });
+                    if (!order) {
+                        return res.status(404).json({ message: 'Order not found' });
+                    }
 
-                paymentConfirmEmail(order);
+                    // Increment the enrollCount for the purchased course
+                    const courseId = order.course._id.toString(); // Convert the course ID to a string
 
-                const result = await ordersCollection.updateOne({ transactionId: req.params.tranId }, {
-                    $set: {
-                        paidStatus: true,
-                    },
-                });
+                    // Fetch the course details from the categoriesCollection
+                    const course = await categoriesCollection.findOne({
+                        _id: new ObjectId(courseId)
+                    });
 
-                if (result.modifiedCount > 0) {
-                    res.redirect(`http://cm-academy.netlify.app/payment/success/${req.params.tranId}`)
+                    if (!course) {
+                        return res.status(404).json({ message: 'Course not found' });
+                    }
+
+                    // Increment the enrollCount
+                    const updatedEnrollCount = course.enrollCount + 1;
+
+                    // Update the enrollCount in the categoriesCollection
+                    const updateResult = await categoriesCollection.updateOne(
+                        { _id: new ObjectId(courseId) },
+                        { $set: { enrollCount: updatedEnrollCount } }
+                    );
+
+                    if (updateResult.modifiedCount > 0) {
+                        // Enrollment count updated successfully
+                        // Send confirmation email
+                        paymentConfirmEmail(order);
+
+                        // Update the paidStatus
+                        const updatePaidStatusResult = await ordersCollection.updateOne(
+                            { transactionId: tranId },
+                            { $set: { paidStatus: true } }
+                        );
+
+                        if (updatePaidStatusResult.modifiedCount > 0) {
+                            // Paid status updated successfully
+                            res.redirect(`http://cm-academy.netlify.app/payment/success/${tranId}`);
+                        } else {
+                            // Handle the case where the paidStatus update failed
+                            res.status(500).json({ message: 'Failed to update paidStatus' });
+                        }
+                    } else {
+                        // Handle the case where the enrollCount update failed
+                        res.status(500).json({ message: 'Failed to update enrollment count' });
+                    }
+                } catch (error) {
+                    console.error('Error handling successful payment:', error);
+                    res.status(500).json({ message: 'Internal server error' });
                 }
             });
 
