@@ -169,7 +169,7 @@ async function run() {
         const bankAccountsCollection = client.db('CM').collection('bankAccounts');
         const withdrawRequestsCollection = client.db('CM').collection('withdrawRequests');
         const CategoriesNameCollection = client.db('CM').collection('CategoriesName');
-
+        const RatingAndFeedbackCollection = client.db('CM').collection('RatingAndFeedback');
 
 
 
@@ -846,6 +846,83 @@ async function run() {
             const result = await withdrawRequestsCollection.find({ email }).toArray();
             res.send(result);
         });
+
+
+
+        // store rating and feedback to db 
+        app.post('/ratingAndFeedback', async (req, res) => {
+            try {
+                const { courseTitle, courseInstructor, courseId, studentEmail, studentName, rating, feedback, studentImage, courseCategory } = req.body;
+
+                await RatingAndFeedbackCollection.insertOne({
+                    courseTitle,
+                    courseInstructor,
+                    courseId,
+                    studentEmail,
+                    studentName,
+                    rating,
+                    feedback,
+                    studentImage,
+                    courseCategory
+                });
+
+                res.status(200).json({ message: 'Rating and feedback saved successfully' });
+            } catch (error) {
+                console.error('Error saving rating and feedback:', error);
+                res.status(500).json({ message: 'Internal server error' });
+            }
+        });
+
+
+
+
+        // get rating and feedback from db by student email and course id
+
+        app.get('/ratingAndFeedback/:email/:courseId', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const courseId = req.params.courseId; // courseId as a string from the URL
+
+                console.log(email, courseId);
+
+                const RatingAndFeedbackCollection = client.db('CM').collection('RatingAndFeedback');
+
+                const ratingsAndFeedbacks = await RatingAndFeedbackCollection.find({
+                    studentEmail: email,
+                    courseId: courseId, // Use the courseId as a string
+                }).toArray();
+
+                res.send(ratingsAndFeedbacks);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+
+
+        // Check if a student has already enrolled in a course and return the course id
+
+        app.get('/orders/:email/:courseId', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const courseId = req.params.courseId; // courseId as a string from the URL
+
+                console.log(email, courseId);
+
+                const orders = await ordersCollection.find({
+                    "order.studentEmail": email,
+                    "course._id": courseId, // Use the courseId as a string
+                }).toArray();
+
+                res.send(orders);
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
 
 
 
