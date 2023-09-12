@@ -758,9 +758,8 @@ async function run() {
             res.send(result);
         });
 
+
         // get all studentEmail with  studentName, date, courseId from Orders collection whose paidStatus is true and it will all enrolled student email and also insure that no duplicate email will be send to the client , also it will send how many course a student enrolled 
-
-
         app.get("/orders/studentEmail", async (req, res) => {
             const result = await ordersCollection.aggregate([
                 {
@@ -793,6 +792,7 @@ async function run() {
             res.send(result);
         });
 
+
         // get order from db with student email then course id
         app.get("/orders/:email/:courseId", async (req, res) => {
             try {
@@ -806,8 +806,89 @@ async function run() {
             }
         });
 
+        // check and update sessions completed status , if session status is false then make it true and increase totalCompletedSessions by 1
+        app.put("/orders/:email/:courseId/:sessionTitle", async (req, res) => {
+            try {
+                const email = req.params.email;
+                const courseId = new ObjectId(req.params.courseId); // Use 'new' to create ObjectId instance
+                const sessionTitle = req.params.sessionTitle;
+
+                console.log(email, courseId, sessionTitle);
+
+                // Find the order that matches the criteria
+                const order = await ordersCollection.findOne({
+                    "order.studentEmail": email,
+                    "order.course._id": courseId,
+                    "order.course.courseOutline.sessions": {
+                        $elemMatch: { sessionTitle: sessionTitle }
+                    }
+                });
+
+                console.log(order)
 
 
+
+                // Check if the order and session exist
+                if (!order) {
+                    return res.status(404).send("Order or session not found");
+                }
+
+                // Find the session within the courseOutline
+                let milestoneIndex = -1;
+                let sessionIndex = -1;
+
+                order.order.course.courseOutline.forEach((milestone, mIndex) => {
+                    const sIndex = milestone.sessions.findIndex(
+                        (session) => session.sessionTitle === sessionTitle
+                    );
+
+                    if (sIndex !== -1) {
+                        milestoneIndex = mIndex;
+                        sessionIndex = sIndex;
+                    }
+                });
+
+                // Check if the session exists
+                if (milestoneIndex === -1 || sessionIndex === -1) {
+                    return res.status(404).send("Session not found");
+                }
+
+                // Find the session within the milestone's sessions array
+                const session =
+                    order.order.course.courseOutline[milestoneIndex].sessions[sessionIndex];
+
+                // Check if the session is not completed (status is false)
+                if (!session.completed) {
+                    // Update the session status to true
+                    session.completed = true;
+
+                    // Increment the totalCompletedSessions by 1
+                    order.totalCompletedSessions += 1;
+
+                    // Update the order in the database
+                    const result = await ordersCollection.updateOne(
+                        {
+                            "order.studentEmail": email,
+                            "order.course._id": courseId,
+                        },
+                        {
+                            $set: {
+                                "order.course.courseOutline": order.order.course.courseOutline,
+                                totalCompletedSessions: order.totalCompletedSessions,
+                            },
+                        }
+                    );
+
+                    res.send(result);
+                } else {
+                    // Session is already completed
+                    res.status(400).send("Session is already completed");
+                }
+            } catch (error) {
+                console.error("Error updating session status:", error);
+                res.status(500).send("Internal Server Error");
+            }
+        });
 
 
         // Create a route for storing bank account setup information
@@ -917,6 +998,12 @@ async function run() {
 
 
 
+        // get rating and feedback from db
+        app.get('/ratingAndFeedback', async (req, res) => {
+            const result = await RatingAndFeedbackCollection.find().toArray();
+            res.send(result);
+        }); 
+
 
         // get rating and feedback from db by student email and course id
 
@@ -940,6 +1027,7 @@ async function run() {
                 res.status(500).send('Internal Server Error');
             }
         });
+
 
 
 
