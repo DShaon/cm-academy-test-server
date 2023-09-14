@@ -285,6 +285,21 @@ async function run() {
             }
         });
 
+        // get all approved or deny course by instructor email with error handling
+        app.get('/categories/instructor/:email/:type', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const type = req.params.type;
+                const categories = await categoriesCollection.find({ instructorEmail: email, ApprovedStatus: type }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
+
+
+
         // get all course which ApprovedStatus is "Approved" from db
         app.get('/categories/approved', async (req, res) => {
             try {
