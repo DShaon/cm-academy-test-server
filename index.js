@@ -245,14 +245,32 @@ async function run() {
         // Getting all courses categories from Db
         app.get('/categories', async (req, res) => {
             try {
-                const categories = await categoriesCollection.find().toArray();
+                const { category, price, rating, popularity, bestSelling } = req.query;
+
+                // Define a filter object based on query parameters
+                const filter = {};
+
+                if (category) {
+                    filter.courseCategory = category;
+                }
+
+                if (price) {
+                    filter.coursePrice = { $lte: parseInt(price) };
+                }
+
+                if (rating) {
+                    filter.rating = { $gte: parseFloat(rating) };
+                }
+
+                // Add more filters for popularity and bestSelling as needed
+
+                const categories = await categoriesCollection.find(filter).toArray();
                 res.json(categories);
             } catch (error) {
                 console.error(error);
                 res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
-
 
 
         // get all course by instructor email with error handling 
@@ -277,6 +295,23 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching categories', error: error.message });
             }
         });
+
+
+        // get all course by dyanmic "approved" or "deny" status from db
+        app.get('/categories/status/:type', async (req, res) => {
+            try {
+                const type = req.params.type;
+                const categories = await categoriesCollection.find({ ApprovedStatus: type }).toArray();
+                res.json(categories);
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Error fetching categories', error: error.message });
+            }
+        });
+
+
+
+
 
         // get all course by category name "courseCategory" with error handling
         app.get('/categories/:courseCategory', async (req, res) => {
@@ -810,38 +845,47 @@ async function run() {
         app.put("/orders/:email/:courseId/:sessionTitle", async (req, res) => {
             try {
                 const email = req.params.email;
-                const courseId = new ObjectId(req.params.courseId); // Use 'new' to create ObjectId instance
+                const courseId = new ObjectId(req.params.courseId);
                 const sessionTitle = req.params.sessionTitle;
-
-                console.log(email, courseId, sessionTitle);
 
                 // Find the order that matches the criteria
                 const order = await ordersCollection.findOne({
-                    "order.studentEmail": email,
-                    "order.course._id": courseId,
-                    "order.course.courseOutline.sessions": {
-                        $elemMatch: { sessionTitle: sessionTitle }
+                    "order.studentEmail": email, // Removed "order"
+                    "course._id": courseId, // Removed "order"
+                    "course.courseOutline": {
+                        $elemMatch: {
+                            "sessions": {
+                                $elemMatch: {
+                                    "sessionTitle": sessionTitle
+                                }
+                            }
+                        }
                     }
                 });
-
-                console.log(order)
-
-
-
-                // Check if the order and session exist
+                // console.log(order)
+                // Check if the order exists
                 if (!order) {
                     return res.status(404).send("Order or session not found");
+                }
+
+                // Check if the course and courseOutline exist
+                const course = order.course;
+
+                // console.log(course.courseOutline)
+                if (!course || !course.courseOutline) {
+                    return res.status(404).send("Course or course outline not found");
                 }
 
                 // Find the session within the courseOutline
                 let milestoneIndex = -1;
                 let sessionIndex = -1;
 
-                order.order.course.courseOutline.forEach((milestone, mIndex) => {
+                course.courseOutline.forEach((milestone, mIndex) => {
                     const sIndex = milestone.sessions.findIndex(
                         (session) => session.sessionTitle === sessionTitle
                     );
 
+                    console.log(sIndex)
                     if (sIndex !== -1) {
                         milestoneIndex = mIndex;
                         sessionIndex = sIndex;
@@ -854,9 +898,9 @@ async function run() {
                 }
 
                 // Find the session within the milestone's sessions array
-                const session =
-                    order.order.course.courseOutline[milestoneIndex].sessions[sessionIndex];
+                const session = course.courseOutline[milestoneIndex].sessions[sessionIndex];
 
+                console.log(session.completed)
                 // Check if the session is not completed (status is false)
                 if (!session.completed) {
                     // Update the session status to true
@@ -865,17 +909,23 @@ async function run() {
                     // Increment the totalCompletedSessions by 1
                     order.totalCompletedSessions += 1;
 
+                    console.log(order.totalCompletedSessions)
                     // Update the order in the database
                     const result = await ordersCollection.updateOne(
                         {
-                            "order.studentEmail": email,
-                            "order.course._id": courseId,
+                            "order.studentEmail": email, // Removed "order"
+                            "course._id": courseId, // Removed "order"
                         },
+
+
                         {
                             $set: {
-                                "order.course.courseOutline": order.order.course.courseOutline,
+                                "course": course, // Update the entire course object
                                 totalCompletedSessions: order.totalCompletedSessions,
+
                             },
+
+
                         }
                     );
 
@@ -889,6 +939,7 @@ async function run() {
                 res.status(500).send("Internal Server Error");
             }
         });
+
 
 
         // Create a route for storing bank account setup information
@@ -1002,7 +1053,7 @@ async function run() {
         app.get('/ratingAndFeedback', async (req, res) => {
             const result = await RatingAndFeedbackCollection.find().toArray();
             res.send(result);
-        }); 
+        });
 
 
         // get rating and feedback from db by student email and course id
