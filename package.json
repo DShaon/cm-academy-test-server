@@ -20,6 +20,7 @@
     "nodemon": "^3.0.1",
     "pdfkit": "^0.13.0",
     "sslcommerz-lts": "^1.1.0",
-    "stripe": "^12.9.0"
+    "stripe": "^12.9.0",
+    "uuid": "^9.0.1"
   }
 }

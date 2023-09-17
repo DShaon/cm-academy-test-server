@@ -170,9 +170,8 @@ async function run() {
         const withdrawRequestsCollection = client.db('CM').collection('withdrawRequests');
         const CategoriesNameCollection = client.db('CM').collection('CategoriesName');
         const RatingAndFeedbackCollection = client.db('CM').collection('RatingAndFeedback');
-
-
-
+        const chatCollection = client.db('CM').collection('Chat');
+        const supportTicketCollection = client.db('CM').collection('SupportTicket');
 
         ////////// Route to blog insertion
         app.post('/blog', async (req, res) => {
@@ -1121,11 +1120,201 @@ async function run() {
 
 
 
+        // Route to handle inserting chat messages
+        const { ObjectId } = require('mongodb');
+
+        // ... other imports and app setup ...
+
+        // Define a route for handling POST requests to send messages
+        app.post('/api/messages', async (req, res) => {
+            try {
+                const { userId, courseId, message } = req.body;
+
+                await chatCollection.updateOne(
+                    {
+                        courseId: courseId,
+                        userId: userId
+                    },
+                    { $push: { messages: message } },
+                    { upsert: true } // Add this to create a new document if it doesn't exist
+                );
+
+                res.status(201).json({ message: 'Message sent successfully' });
+            } catch (error) {
+                console.error('Error sending message:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
 
 
 
+        // Route to fetch messages based on userId and courseId
+        app.get('/api/messages/:courseId/:userId', async (req, res) => {
+            try {
+                const { courseId, userId } = req.params;
+
+                if (!courseId || !userId) {
+                    return res.status(400).json({ error: 'Invalid request' });
+                }
+
+                const course = await chatCollection.findOne({ courseId: courseId, userId: userId });
+
+                if (course) {
+                    res.status(200).json(course.messages);
+                } else {
+                    res.status(404).json({ error: 'Course not found' });
+                }
+            } catch (error) {
+                console.error('Error fetching messages from MongoDB:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
 
 
+
+        //  get all message by course id from db 
+        app.get('/api/messages/:courseId', async (req, res) => {
+            try {
+
+                const courseId = req.params.courseId;
+
+                const messages = await chatCollection.find({
+                    courseId,
+                }).toArray();
+
+                res.status(200).json(messages);
+            } catch (error) {
+                console.error('Error fetching messages from MongoDB:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
+
+        // Function to generate a short alphanumeric ticket number
+        function generateShortTicketNumber(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let ticketNumber = '';
+
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                ticketNumber += characters[randomIndex];
+            }
+
+            return ticketNumber;
+        }
+        const shortTicketNumber = generateShortTicketNumber(2);
+        console.log(shortTicketNumber)
+
+
+        app.post('/api/support-tickets', async (req, res) => {
+            try {
+                const { studentName, subject, message, studentEmail } = req.body;
+                const timestamp = new Date().toISOString();
+
+                const shortTicketNumber = generateShortTicketNumber(8);
+
+                // Create a new support ticket document with the ticket number
+                const supportTicket = {
+                    'TicketNumber': shortTicketNumber,
+                    'StudentName': studentName,
+                    'StudentEmail': studentEmail,
+                    Subject: subject,
+                    status: 'pending',
+                    Date: timestamp,
+                    messages: [
+                        {
+                            sender: 'student',
+                            content: message,
+                            timestamp,
+                        },
+                    ],
+                };
+
+                // Insert the support ticket into the SupportTicket collection
+                await client.db('CM').collection('SupportTicket').insertOne(supportTicket);
+
+                // Send a response indicating success
+                res.status(201).json({ message: 'Support ticket created successfully' });
+            } catch (error) {
+                console.error('Error creating support ticket:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
+
+        // Route to fetch all support tickets from the database
+        app.get('/api/support-tickets', async (req, res) => {
+            try {
+                const supportTickets = await client.db('CM').collection('SupportTicket').find().toArray();
+                res.status(200).json(supportTickets);
+            } catch (error) {
+                console.error('Error fetching support tickets:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
+
+        // get support ticket by ticket number from db 
+        app.get('/api/support-tickets/:ticketNumber', async (req, res) => {
+            try {
+                const ticketNumber = req.params.ticketNumber;
+
+                const supportTicket = await client.db('CM').collection('SupportTicket').findOne({ 'TicketNumber': ticketNumber });
+
+                if (supportTicket) {
+                    res.status(200).json(supportTicket);
+                } else {
+                    res.status(404).json({ error: 'Support ticket not found' });
+                }
+            } catch (error) {
+                console.error('Error fetching support ticket:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
+
+        // get all support ticket by student email and student name from db
+        app.get('/api/support-tickets/:studentEmail/:studentName', async (req, res) => {
+            try {
+                const studentEmail = req.params.studentEmail;
+                const studentName = req.params.studentName;
+
+                const supportTickets = await client.db('CM').collection('SupportTicket').find({
+                    StudentEmail: studentEmail,
+                    StudentName: studentName,
+                }).toArray();
+
+                res.status(200).json(supportTickets);
+            } catch (error) {
+                console.error('Error fetching support tickets:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
+
+
+        app.post('/api/support-tickets/:ticketNumber/add-message', async (req, res) => {
+            try {
+              const ticketNumber = req.params.ticketNumber;
+              const newMessage = req.body;
+          
+              // Find the ticket based on the ticket number and update its messages array
+              const result = await client.db('CM').collection('SupportTicket').updateOne(
+                { 'TicketNumber': ticketNumber },
+                { $push: { messages: newMessage } }
+              );
+          
+              if (result.modifiedCount === 1) {
+                res.status(200).json(newMessage);
+              } else {
+                res.status(404).json({ error: 'Support ticket not found' });
+              }
+            } catch (error) {
+              console.error('Error adding message to support ticket:', error);
+              res.status(500).json({ error: 'Internal Server Error' });
+            }
+          });
+          
 
 
 
