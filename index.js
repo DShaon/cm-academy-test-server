@@ -618,15 +618,15 @@ async function run() {
                 linkedinLink, // Add LinkedIn field
                 githubLink, // Add GitHub field
             } = req.body;
-        
+
             try {
                 // Find the instructor by email
                 const instructor = await usersCollection.findOne({ email });
-        
+
                 if (!instructor) {
                     return res.status(404).json({ message: "Instructor not found" });
                 }
-        
+
                 // Update the instructor's information, including the new fields
                 await usersCollection.updateOne(
                     { email },
@@ -644,17 +644,36 @@ async function run() {
                         },
                     }
                 );
-        
+
                 // Fetch the updated instructor data
                 const updatedInstructor = await usersCollection.findOne({ email });
-        
+
                 res.status(200).json(updatedInstructor);
             } catch (error) {
                 console.error(error);
                 res.status(500).json({ message: "Internal server error" });
             }
         });
-        
+
+
+
+        // get instructor information by email from db 
+
+        app.get('/users/instructor/:email/info', async (req, res) => {
+            const email = req.params.email;
+
+            const query = { email: email };
+
+            const instructor = await usersCollection.findOne(query);
+
+            if (!instructor) {
+                return res.status(404).json({ message: 'Instructor not found' });
+            }
+
+            res.json(instructor);
+        });
+
+
 
 
 
