@@ -621,7 +621,8 @@ async function run() {
                 }
 
                 // Update the instructor's information
-                await usersCollection.updateOne({ email }, { $set: { fullName, contactNumber, userImage, aboutMe } });
+                await usersCollection.updateOne({ email }, { $set: { fullName, contactNumber, userImage, aboutMe } }, { upsert: true }
+                );
 
                 // Fetch the updated instructor data
                 const updatedInstructor = await usersCollection.findOne({ email });
@@ -953,6 +954,249 @@ async function run() {
                 res.status(500).send("Internal Server Error");
             }
         });
+
+
+
+
+
+        // app.post('/api/storeQuizScore', async (req, res) => {
+        //     try {
+        //         const { milestoneName, score, courseId, studentEmail } = req.body;
+
+        //         console.log('Received POST request to store quiz score:', req.body);
+
+        //         // Find the order that matches the criteria
+        //         const order = await ordersCollection.findOne({
+        //             "order.studentEmail": studentEmail,
+        //             "course._id": new ObjectId(courseId),
+        //         });
+
+        //         // Check if the order exists
+        //         if (!order) {
+        //             console.log('Order not found for studentEmail:', studentEmail, 'and courseId:', courseId);
+        //             return res.status(404).send('Order not found');
+        //         }
+
+        //         console.log('Found order:', order);
+
+        //         // Check if the course and course outline exist within the order
+        //         const course = order.course;
+        //         if (!course || !course.courseOutline) {
+        //             console.log('Course or course outline not found in order:', order);
+        //             return res.status(404).send('Course or course outline not found');
+        //         }
+
+        //         console.log('Found course:', course);
+
+        //         // Find the milestone within the courseOutline
+        //         const milestone = course.courseOutline.find(
+        //             (ms) => ms.milestoneName === milestoneName
+        //         );
+
+        //         if (!milestone) {
+        //             console.log('Milestone not found:', milestoneName);
+        //             return res.status(404).send('Milestone not found');
+        //         }
+
+        //         console.log('Found milestone:', milestone);
+
+        //         // Calculate the score percentage
+        //         const scorePercentage = parseFloat(score);
+
+        //         // Update the milestone's score field with the user's score as a percentage
+        //         milestone.score = scorePercentage;
+
+        //         // Update the order in the database to save the modified course
+        //         const result = await ordersCollection.updateOne(
+        //             {
+        //                 "order.studentEmail": studentEmail,
+        //                 "course._id": new ObjectId(courseId),
+        //             },
+        //             {
+        //                 $set: {
+        //                     'course': course, // Update the entire course object
+        //                 },
+        //             }
+        //         );
+
+        //         console.log('Updated order with new course:', course);
+
+        //         res.status(200).send('Quiz score stored successfully.');
+        //     } catch (error) {
+        //         console.error('Error storing quiz score:', error);
+        //         res.status(500).send('Internal Server Error');
+        //     }
+        // });
+
+
+
+        app.post('/api/storeQuizScore', async (req, res) => {
+            try {
+                const { milestoneName, score, courseId, studentEmail } = req.body;
+
+                console.log('Received POST request to store quiz score:', req.body);
+
+                // Find the order that matches the criteria
+                const order = await ordersCollection.findOne({
+                    "order.studentEmail": studentEmail,
+                    "course._id": new ObjectId(courseId),
+                });
+
+                // Check if the order exists
+                if (!order) {
+                    console.log('Order not found for studentEmail:', studentEmail, 'and courseId:', courseId);
+                    return res.status(404).send('Order not found');
+                }
+
+                console.log('Found order:', order);
+
+                // Check if the course and course outline exist within the order
+                const course = order.course;
+                if (!course || !course.courseOutline) {
+                    console.log('Course or course outline not found in order:', order);
+                    return res.status(404).send('Course or course outline not found');
+                }
+
+                console.log('Found course:', course);
+
+                // Find the milestone within the courseOutline
+                const milestone = course.courseOutline.find(
+                    (ms) => ms.milestone == milestoneName
+                );
+
+                console.log("vokaaavokaaaa", milestone)
+                if (!milestone) {
+                    console.log('Milestone not found:', milestoneName);
+                    return res.status(404).send('Milestone not found');
+                }
+
+                console.log('Found milestone:', milestone);
+
+                // Add the new field quizScore to the milestone
+                milestone.quizScore = score;
+
+                // Update the order in the database to save the modified course
+                const result = await ordersCollection.updateOne(
+                    {
+                        "order.studentEmail": studentEmail,
+                        "course._id": new ObjectId(courseId),
+                    },
+                    {
+                        $set: {
+                            'course': course, // Update the entire course object
+                        },
+                    }
+                );
+
+                console.log('Updated order with new course:', course);
+
+                res.status(200).send('Quiz score stored successfully.');
+            } catch (error) {
+                console.error('Error storing quiz score:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+        app.get('/api/getQuizResult', async (req, res) => {
+            try {
+                const { milestoneName, courseId, studentEmail } = req.query;
+
+                // Find the order that matches the criteria
+                const order = await ordersCollection.findOne({
+                    "order.studentEmail": studentEmail,
+                    "course._id": new ObjectId(courseId),
+                });
+
+                // Check if the order exists
+                if (!order) {
+                    return res.status(404).send('Order not found');
+                }
+
+                // Check if the course and course outline exist within the order
+                const course = order.course;
+                if (!course || !course.courseOutline) {
+                    return res.status(404).send('Course or course outline not found');
+                }
+
+                // Find the milestone within the courseOutline
+                const milestone = course.courseOutline.find(
+                    (ms) => ms.milestone === milestoneName
+                );
+
+                if (!milestone) {
+                    return res.status(404).send('Milestone not found');
+                }
+
+                // Check if the milestone has a quiz score
+                if (milestone.quizScore === undefined) {
+                    return res.status(404).send('Quiz score not found for the milestone');
+                }
+
+                // Return the quiz score for the milestone
+                res.status(200).json({ milestoneName, quizScore: milestone.quizScore });
+            } catch (error) {
+                console.error('Error getting quiz result:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+        // get quiz score by email and course id and milestone name with route 
+
+        app.get('/api/getQuizResult/:email/:courseId/:milestoneName', async (req, res) => {
+            try {
+
+                const email = req.params.email;
+                const courseId = new ObjectId(req.params.courseId);
+                const milestoneName = req.params.milestoneName;
+
+                // Find the order that matches the criteria
+                const order = await ordersCollection.findOne({
+                    "order.studentEmail": email,
+                    "course._id": courseId,
+                });
+
+                // Check if the order exists 
+                if (!order) {
+                    return res.status(404).send('Order not found');
+                }
+
+                // Check if the course and course outline exist within the order
+                const course = order.course;
+                if (!course || !course.courseOutline) {
+                    return res.status(404).send('Course or course outline not found');
+                }
+
+                // Find the milestone within the courseOutline
+                const milestone = course.courseOutline.find(
+                    (ms) => ms.milestone === milestoneName
+                );
+
+                if (!milestone) {
+                    return res.status(404).send('Milestone not found');
+                }
+
+                // Check if the milestone has a quiz score
+                if (milestone.quizScore === undefined) {
+                    return res.status(404).send('Quiz score not found for the milestone');
+                }
+
+                // Return the quiz score for the milestone
+                res.status(200).json({ milestoneName, quizScore: milestone.quizScore });
+            } catch (error) {
+                console.error('Error getting quiz result:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+
+
+
+
+
+
+
 
 
 
@@ -1295,26 +1539,26 @@ async function run() {
 
         app.post('/api/support-tickets/:ticketNumber/add-message', async (req, res) => {
             try {
-              const ticketNumber = req.params.ticketNumber;
-              const newMessage = req.body;
-          
-              // Find the ticket based on the ticket number and update its messages array
-              const result = await client.db('CM').collection('SupportTicket').updateOne(
-                { 'TicketNumber': ticketNumber },
-                { $push: { messages: newMessage } }
-              );
-          
-              if (result.modifiedCount === 1) {
-                res.status(200).json(newMessage);
-              } else {
-                res.status(404).json({ error: 'Support ticket not found' });
-              }
+                const ticketNumber = req.params.ticketNumber;
+                const newMessage = req.body;
+
+                // Find the ticket based on the ticket number and update its messages array
+                const result = await client.db('CM').collection('SupportTicket').updateOne(
+                    { 'TicketNumber': ticketNumber },
+                    { $push: { messages: newMessage } }
+                );
+
+                if (result.modifiedCount === 1) {
+                    res.status(200).json(newMessage);
+                } else {
+                    res.status(404).json({ error: 'Support ticket not found' });
+                }
             } catch (error) {
-              console.error('Error adding message to support ticket:', error);
-              res.status(500).json({ error: 'Internal Server Error' });
+                console.error('Error adding message to support ticket:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
             }
-          });
-          
+        });
+
 
 
 
