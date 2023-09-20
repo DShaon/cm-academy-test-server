@@ -1489,10 +1489,12 @@ async function run() {
         console.log(shortTicketNumber)
 
 
+
+        // create support ticket
         app.post('/api/support-tickets', async (req, res) => {
             try {
-                const { studentName, subject, message, studentEmail } = req.body;
-                const timestamp = new Date().toISOString();
+                const { studentName, subject, message, studentEmail, timestamp } = req.body;
+                
 
                 const shortTicketNumber = generateShortTicketNumber(8);
 
