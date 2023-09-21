@@ -1494,7 +1494,7 @@ async function run() {
         app.post('/api/support-tickets', async (req, res) => {
             try {
                 const { studentName, subject, message, studentEmail, timestamp } = req.body;
-                
+
 
                 const shortTicketNumber = generateShortTicketNumber(8);
 
@@ -1525,6 +1525,7 @@ async function run() {
                 res.status(500).json({ error: 'Internal Server Error' });
             }
         });
+
 
 
         // Route to fetch all support tickets from the database
@@ -1600,6 +1601,29 @@ async function run() {
             }
         });
 
+
+
+        // Route to handle updating the status to "closed" for a support ticket with a given ticket number
+        app.put('/api/support-tickets/:ticketNumber/close', async (req, res) => {
+            try {
+                const ticketNumber = req.params.ticketNumber;
+
+                // Find the ticket based on the ticket number and update its status to "closed"
+                const result = await client.db('CM').collection('SupportTicket').updateOne(
+                    { 'TicketNumber': ticketNumber },
+                    { $set: { status: 'closed' } }
+                );
+
+                if (result.modifiedCount === 1) {
+                    res.status(200).json({ message: 'Support ticket closed successfully' });
+                } else {
+                    res.status(404).json({ error: 'Support ticket not found' });
+                }
+            } catch (error) {
+                console.error('Error closing support ticket:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
 
 
 
