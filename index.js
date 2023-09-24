@@ -172,7 +172,7 @@ async function run() {
         const RatingAndFeedbackCollection = client.db('CM').collection('RatingAndFeedback');
         const chatCollection = client.db('CM').collection('Chat');
         const supportTicketCollection = client.db('CM').collection('SupportTicket');
-
+        const InstructorPaymentCollection = client.db('CM').collection('Payment');
         ////////// Route to blog insertion
         app.post('/blog', async (req, res) => {
             try {
@@ -1627,6 +1627,36 @@ async function run() {
 
 
 
+        // Update finance details for a user
+        app.put('/updateFinance/:email', async (req, res) => {
+            try {
+                const email = req.params.email;
+                const { totalAmount, withdrawn ,balance } = req.body;
+
+
+                console.log(email, totalAmount, withdrawn ,balance);
+
+                // Find the user's payment details and update the finance details
+                const result = await InstructorPaymentCollection.updateOne(
+                    { email: email },
+                    {
+                      $set: { totalAmount: totalAmount, withdrawn: withdrawn ,balance: balance},
+                     
+                    },
+                    { upsert: true }
+                    );
+
+                if (result.modifiedCount === 1) {
+                    res.status(200).json({ message: 'Finance details updated successfully' });
+                } else {
+                    res.status(404).json({ error: 'User not found' });
+                }
+            } catch (error) {
+                console.error('Error updating finance details:', error);
+                res.status(500).json({ error: 'Internal Server Error' });
+            }
+        });
+
 
 
 
@@ -1642,7 +1672,7 @@ async function run() {
 }
 
 
-
+// shaon
 
 run().catch(console.dir);
 
