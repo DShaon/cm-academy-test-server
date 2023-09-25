@@ -1319,6 +1319,47 @@ async function run() {
             res.send(result);
         });
 
+        // update withdrawStatus true or false by id 
+
+        app.post('/updateWithdrawStatus/:id', async (req, res) => {
+            try {
+
+                const id = req.params.id;
+                const withdrawStatus = req.body.withdrawStatus;
+
+                const result = await withdrawRequestsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { withdrawStatus: withdrawStatus } }
+                );
+
+                res.send(result);
+            } catch (error) {
+                console.error('Error updating withdraw status:', error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
+        // update withdrawStatus true or false by email
+
+        // app.post('/updateWithdrawStatus/:email', async (req, res) => {
+        //     try {
+
+        //         const email = req.params.email;
+        //         const withdrawStatus = req.body.withdrawStatus;
+
+        //         const result = await withdrawRequestsCollection.updateOne(
+        //             { email: email },
+        //             { $set: { withdrawStatus: withdrawStatus } }
+        //         );
+                    
+        //         res.send(result);
+        //     } catch (error) {
+
+        //         console.error('Error updating withdraw status:', error);
+        //         res.status(500).send('Internal Server Error');
+        //     }
+        // });
+
 
 
         // store rating and feedback to db 
