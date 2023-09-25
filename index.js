@@ -1286,13 +1286,14 @@ async function run() {
         // store withdraw re to db
         app.post('/storeWData', async (req, res) => {
             try {
-                const { totalAmount, email, withdrawStatus, name } = req.body;
+                const { totalAmount, email, withdrawStatus, name, timestamp } = req.body;
 
                 await withdrawRequestsCollection.insertOne({
                     name,
                     totalAmount,
                     email,
                     withdrawStatus,
+                    timestamp
                 });
 
                 res.status(200).json({ message: 'Withdrawal request saved successfully' });
@@ -1628,36 +1629,70 @@ async function run() {
 
 
         // Update finance details for a user
-        app.put('/updateFinance/:email', async (req, res) => {
+        // app.put('/updateFinance/:email', async (req, res) => {
+        //     try {
+        //         const email = req.params.email;
+        //         const { totalAmount, withdrawn, balance } = req.body;
+
+
+        //         console.log(email, totalAmount, withdrawn, balance);
+
+        //         // Find the user's payment details and update the finance details
+        //         const result = await InstructorPaymentCollection.updateOne(
+        //             { email: email },
+        //             {
+        //                 $set: { totalAmount: totalAmount, withdrawn: withdrawn, balance: balance },
+
+        //             },
+        //             { upsert: true }
+        //         );
+
+        //         if (result.modifiedCount === 1) {
+        //             res.status(200).json({ message: 'Finance details updated successfully' });
+        //         } else {
+        //             res.status(404).json({ error: 'User not found' });
+        //         }
+        //     } catch (error) {
+        //         console.error('Error updating finance details:', error);
+        //         res.status(500).json({ error: 'Internal Server Error' });
+        //     }
+        // });
+
+
+        app.post('/updateFinance/:email', async (req, res) => {
             try {
-                const email = req.params.email;
-                const { totalAmount, withdrawn ,balance } = req.body;
+                const { totalAmount, balance, withdrawn } = req.body;
 
+                console.log('Received payment data:', totalAmount, balance, withdrawn);
 
-                console.log(email, totalAmount, withdrawn ,balance);
+                // Assuming you already have a MongoDB collection
+                const InstructorPaymentCollection = client.db('CM').collection('Payment');
 
-                // Find the user's payment details and update the finance details
-                const result = await InstructorPaymentCollection.updateOne(
-                    { email: email },
+                // Find or create a document for the current user (you may use their email or ID)
+                const userPaymentDoc = await InstructorPaymentCollection.findOneAndUpdate(
+                    { instructorEmail: req.params.email }, // Assuming you have a user authentication system
                     {
-                      $set: { totalAmount: totalAmount, withdrawn: withdrawn ,balance: balance},
-                     
+                        $set: {
+                            totalAmount,
+                            currentBalance: balance,
+                            totalWithdrawn: withdrawn,
+                        },
                     },
-                    { upsert: true }
-                    );
+                    { upsert: true, returnOriginal: false }
+                );
 
-                if (result.modifiedCount === 1) {
-                    res.status(200).json({ message: 'Finance details updated successfully' });
+                console.log('Updated payment document:', userPaymentDoc);
+
+                if (userPaymentDoc) {
+                    res.status(200).json({ message: 'Payment data stored successfully.' });
                 } else {
-                    res.status(404).json({ error: 'User not found' });
+                    res.status(500).json({ message: 'Failed to store payment data.' });
                 }
             } catch (error) {
-                console.error('Error updating finance details:', error);
-                res.status(500).json({ error: 'Internal Server Error' });
+                console.error('Error storing payment data:', error);
+                res.status(500).json({ message: 'Internal server error.' });
             }
         });
-
-
 
 
 
