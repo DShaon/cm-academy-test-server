@@ -1351,7 +1351,7 @@ async function run() {
         //             { email: email },
         //             { $set: { withdrawStatus: withdrawStatus } }
         //         );
-                    
+
         //         res.send(result);
         //     } catch (error) {
 
@@ -1735,7 +1735,12 @@ async function run() {
             }
         });
 
-
+        // get finance details from db by email 
+        app.get('/getFinance/:email', async (req, res) => {
+            const email = req.params.email;
+            const result = await InstructorPaymentCollection.find({ "instructorEmail": email }).toArray();
+            res.send(result);
+        });
 
 
         ////////////////////////////////////////////////////////////////////////////////////
