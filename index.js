@@ -1702,9 +1702,9 @@ async function run() {
 
         app.post('/updateFinance/:email', async (req, res) => {
             try {
-                const { totalAmount, balance, withdrawn } = req.body;
+                const { totalAmount, balance, totalWithdrawn } = req.body;
 
-                console.log('Received payment data:', totalAmount, balance, withdrawn);
+                console.log('Received payment data:', totalAmount, balance, totalWithdrawn);
 
                 // Assuming you already have a MongoDB collection
                 const InstructorPaymentCollection = client.db('CM').collection('Payment');
@@ -1716,7 +1716,7 @@ async function run() {
                         $set: {
                             totalAmount,
                             currentBalance: balance,
-                            totalWithdrawn: withdrawn,
+                            totalWithdrawn: totalWithdrawn,
                         },
                     },
                     { upsert: true, returnOriginal: false }
