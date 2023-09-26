@@ -1453,10 +1453,12 @@ async function run() {
         // Define a route for handling POST requests to send messages
         app.post('/api/messages', async (req, res) => {
             try {
-                const { userId, courseId, message } = req.body;
+                const { userId, courseId, message, userName, userEmail } = req.body;
 
                 await chatCollection.updateOne(
                     {
+                        userName: userName,
+                        userEmail: userEmail,
                         courseId: courseId,
                         userId: userId
                     },
